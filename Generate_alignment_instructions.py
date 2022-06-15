@@ -90,7 +90,7 @@ for accession in inventorylist[0:maxaccessions]:
                 copylist.append(entry)
                 if splentry[-(2+int(compression))][-1] in ("1","F"):
                     forwardlist.append(finaldir  + ".".join(splentry[:-int(compression)]))
-                elif splentry[-(2+int(compression))][-1] in ("2","R):
+                elif splentry[-(2+int(compression))][-1] in ("2","R"):
                     reverselist.append(finaldir  + ".".join(splentry[:-int(compression)]))
                 else:
                     unassignedlist.append(finaldir  + ".".join(splentry[:-int(compression)]))
@@ -103,7 +103,7 @@ for accession in inventorylist[0:maxaccessions]:
     writefile.write("\nmkdir "+ finaldir)
     for entry in copylist:
         writefile.write("\ncp " + inventory[accession]["startdir"] + "/" + entry + " " + finaldir)
-    writefile.write("\ngunzip "+finaldir+"*")
+    writefile.write("\npigz -d -p 10 "+finaldir+"*")
     forwardlist = ",".join(forwardlist)
     reverselist = ",".join(reverselist)
     unassignedlist = ",".join(unassignedlist)
@@ -116,7 +116,7 @@ for accession in inventorylist[0:maxaccessions]:
     writefile.write("\nvarscan pileup2snp " + finalname + "_aligned.sorted.bam.pileup --min-coverage " + SNPdepth + " > " + finalname + "_aligned.sorted.bam.pileup2snp")
     writefile.write("\nvarscan pileup2indel " + finalname + "_aligned.sorted.bam.pileup --min-coverage 5 > " + finalname + "_aligned.sorted.bam.pileup2indel")
     if options.gzip == True:
-        writefile.write("\ngzip " + finalname + "_aligned.sorted.bam.pileup")
+        writefile.write("\npigz --best -p 10 " + finalname + "_aligned.sorted.bam.pileup")
     writefile.write("\nrm "+finalname+"_aligned.sam")
     writefile.write("\nrm "+finalname+"_aligned.bam")
     writefile.write("\nrm "+finalname+"_aligned.sorted.bam")

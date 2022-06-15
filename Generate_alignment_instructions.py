@@ -5,7 +5,7 @@ now = datetime.now()
 #Options for instructions - need to provide a master file detailing the input and output locations, as well as add flags for common choices (eg, limit outputs to 5) - also add functionality for copying over appropriate genome files?
 
 parser = OptionParser()
-parser.add_option("-i", "--inventory", dest="infile", help="path to inventory file detailing data to be fed into trinity, and outputs",action="store",type="string")
+parser.add_option("-i", "--inventory", dest="infile", help="path to inventory file detailing data to be fed into hisat2, and outputs",action="store",type="string")
 parser.add_option("-s", "--short", dest="short", help="activate to only make a \"short\" file which does the first run", action="store_true",default=False)
 parser.add_option("-o", "--outfile", dest="outfile", help="path to and name of bash file (without extension) to be created with the instructions given", action="store",type="string", default="./Alignment_instructions")
 parser.add_option("-g", "--genomefile", dest="genomefile", help="Path to and name of the genome file (including extension) to be referenced by SNP calling", action="store",type="string", default="Nonegiven")
@@ -13,9 +13,10 @@ parser.add_option("-r", "--hisat2", dest="hisatindex", help="path to and name of
 parser.add_option("-t", "--threads", dest="threads", help="threads to give hisat2 and pigz", action="store",type="string", default="1")
 parser.add_option("-x", "--additional", dest="additional", help="additional options to pass to hisat, give them here \"enclosed in quotes\"", action="store",type="string", default="NA")
 parser.add_option("-d", "--SNPdepth", dest="SNPdepth", help="a minimum depth requirement for SNPs, default = 3", action="store",type="string", default="3")
-parser.add_option("-c", "--compress", dest="gzip", help="Gzip output files, default = off", action="store_true", default=False)
+parser.add_option("-c", "--compress", dest="gzip", help="pigz output files, default = off", action="store_true", default=False)
 parser.add_option("--sam-only", dest="samonly", help="only produce .sam files, no .bam or other processing, default = off", action="store_true", default=False)
 parser.add_option("--keep-bam", dest="keepbam", help="keep the .bam file, as well as the pileups, default = off", action="store_true", default=False)
+parser.add_option("--keep-sam", dest="keepsam", help="keep the .sam file, as well as the pileups, default = off", action="store_true", default=False)
 
 (options, args) = parser.parse_args()
 
@@ -121,11 +122,14 @@ for accession in inventorylist[0:maxaccessions]:
         writefile.write("\nvarscan pileup2indel " + finalname + "_aligned.sorted.bam.pileup --min-coverage 5 > " + finalname + "_aligned.sorted.bam.pileup2indel")
         if options.gzip == True:
             writefile.write("\npigz --best -p "+ options.threads + " " + finalname + "_aligned.sorted.bam.pileup")
-        writefile.write("\nrm "+finalname+"_aligned.sam")
+        if not options.keepsam == True:
+            writefile.write("\nrm "+finalname+"_aligned.sam")
+        elif options.gzip == True:
+            writefile.write("\npigz --best -p " + options.threads + " "+finalname+"_aligned.sam")
         writefile.write("\nrm "+finalname+"_aligned.bam")
         if not options.keepbam == True:
             writefile.write("\nrm "+finalname+"_aligned.sorted.bam")
-        elif options.gzip == True
+        elif options.gzip == True:
             writefile.write("\npigz --best -p " + options.threads + " "+finalname+"_aligned.sorted.bam")
     for entry in totallist:
         writefile.write("\nrm "  + entry)

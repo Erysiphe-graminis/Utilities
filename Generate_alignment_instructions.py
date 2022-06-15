@@ -10,10 +10,13 @@ parser.add_option("-s", "--short", dest="short", help="activate to only make a \
 parser.add_option("-o", "--outfile", dest="outfile", help="path to and name of bash file (without extension) to be created with the instructions given", action="store",type="string", default="./Alignment_instructions")
 parser.add_option("-g", "--genomefile", dest="genomefile", help="Path to and name of the genome file (including extension) to be referenced by SNP calling", action="store",type="string", default="Nonegiven")
 parser.add_option("-r", "--hisat2", dest="hisatindex", help="path to and name of the hisat2-index files to be referenced (without the.N.ht2 extension)", action="store",type="string", default="Nonegiven")
-parser.add_option("-t", "--threads", dest="threads", help="threads to give hisat2", action="store",type="string", default="1")
+parser.add_option("-t", "--threads", dest="threads", help="threads to give hisat2 and pigz", action="store",type="string", default="1")
 parser.add_option("-x", "--additional", dest="additional", help="additional options to pass to hisat, give them here \"enclosed in quotes\"", action="store",type="string", default="NA")
 parser.add_option("-d", "--SNPdepth", dest="SNPdepth", help="a minimum depth requirement for SNPs, default = 3", action="store",type="string", default="3")
 parser.add_option("-c", "--compress", dest="gzip", help="Gzip output files, default = off", action="store_true", default=False)
+parser.add_option("--sam-only", dest="samonly", help="only produce .sam files, no .bam or other processing, default = off", action="store_true", default=False)
+parser.add_option("--keep-bam", dest="keepbam", help="keep the .bam file, as well as the pileups, default = off", action="store_true", default=False)
+
 (options, args) = parser.parse_args()
 
 additionaloptions = "NA"
@@ -112,14 +115,18 @@ for accession in inventorylist[0:maxaccessions]:
         writefile.write(" -U " + unassignedlist)
     if not additionaloptions == "NA":
         writefile.write(additionaloptions)
-    writefile.write("\nsamtools view -@ " +options.threads + " -S -b "+ finalname + "_aligned.sam > " +finalname + "_aligned.bam\nsamtools sort -@ " + options.threads + " " + finalname + "_aligned.bam -o " + finalname + "_aligned.sorted.bam\nsamtools mpileup -o " + finalname + "_aligned.sorted.bam.pileup -f " + options.genomefile + " " + finalname + "_aligned.sorted.bam")
-    writefile.write("\nvarscan pileup2snp " + finalname + "_aligned.sorted.bam.pileup --min-coverage " + SNPdepth + " > " + finalname + "_aligned.sorted.bam.pileup2snp")
-    writefile.write("\nvarscan pileup2indel " + finalname + "_aligned.sorted.bam.pileup --min-coverage 5 > " + finalname + "_aligned.sorted.bam.pileup2indel")
-    if options.gzip == True:
-        writefile.write("\npigz --best -p 10 " + finalname + "_aligned.sorted.bam.pileup")
-    writefile.write("\nrm "+finalname+"_aligned.sam")
-    writefile.write("\nrm "+finalname+"_aligned.bam")
-    writefile.write("\nrm "+finalname+"_aligned.sorted.bam")
+    if not options.samonly == True:
+        writefile.write("\nsamtools view -@ " +options.threads + " -S -b "+ finalname + "_aligned.sam > " +finalname + "_aligned.bam\nsamtools sort -@ " + options.threads + " " + finalname + "_aligned.bam -o " + finalname + "_aligned.sorted.bam\nsamtools mpileup -o " + finalname + "_aligned.sorted.bam.pileup -f " + options.genomefile + " " + finalname + "_aligned.sorted.bam")
+        writefile.write("\nvarscan pileup2snp " + finalname + "_aligned.sorted.bam.pileup --min-coverage " + SNPdepth + " > " + finalname + "_aligned.sorted.bam.pileup2snp")
+        writefile.write("\nvarscan pileup2indel " + finalname + "_aligned.sorted.bam.pileup --min-coverage 5 > " + finalname + "_aligned.sorted.bam.pileup2indel")
+        if options.gzip == True:
+            writefile.write("\npigz --best -p "+ options.threads + " " + finalname + "_aligned.sorted.bam.pileup")
+        writefile.write("\nrm "+finalname+"_aligned.sam")
+        writefile.write("\nrm "+finalname+"_aligned.bam")
+        if not options.keepbam == True:
+            writefile.write("\nrm "+finalname+"_aligned.sorted.bam")
+        elif options.gzip == True
+            writefile.write("\npigz --best -p " + options.threads + " "+finalname+"_aligned.sorted.bam")
     for entry in totallist:
         writefile.write("\nrm "  + entry)
 writefile.close()
